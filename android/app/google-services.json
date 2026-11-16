@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "231196347984",
+    "firebase_url": "https://tam-ludo-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "tam-ludo",
+    "storage_bucket": "tam-ludo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:231196347984:android:10dbd17c600ab88fa1cb55",
+        "android_client_info": {
+          "package_name": "com.tam.ludo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlixxSJguodaBe1w9QrlRW81_eEqeoz7A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
