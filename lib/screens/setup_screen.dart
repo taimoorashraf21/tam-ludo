@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../game/game_controller.dart';
 import '../game/ludo_engine.dart';
+import '../widgets/game_widgets.dart';
 import '../widgets/ludo_colors.dart';
 import 'board_screen.dart';
 
@@ -74,57 +75,79 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     final isVsComputer = widget.mode == GameMode.vsComputer;
     return Scaffold(
+      backgroundColor: TamLudoTheme.feltBottom,
       appBar: AppBar(
-        title: Text(isVsComputer ? 'Vs Computer' : 'Pass & Play'),
+        backgroundColor: TamLudoTheme.feltBottom,
+        foregroundColor: Colors.white,
+        title: Text(
+          isVsComputer ? 'Vs Computer' : 'Pass & Play',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Players',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 2, label: Text('2')),
-                ButtonSegment(value: 3, label: Text('3')),
-                ButtonSegment(value: 4, label: Text('4')),
-              ],
-              selected: {_playerCount},
-              onSelectionChanged: (s) => _setCount(s.first),
-            ),
-            const SizedBox(height: 20),
-            for (var i = 0; i < _playerCount; i++) _playerRow(i),
-            const SizedBox(height: 28),
-            ElevatedButton(
-              onPressed: _startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TamLudoTheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+      body: FeltBackground(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Players',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: TamLudoTheme.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 2, label: Text('2')),
+                        ButtonSegment(value: 3, label: Text('3')),
+                        ButtonSegment(value: 4, label: Text('4')),
+                      ],
+                      selected: {_playerCount},
+                      onSelectionChanged: (s) => _setCount(s.first),
+                    ),
+                    const SizedBox(height: 18),
+                    for (var i = 0; i < _playerCount; i++) _playerRow(i),
+                  ],
                 ),
               ),
-              child: const Text(
-                'Start Game',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+              const SizedBox(height: 22),
+              GoldButton(
+                label: 'START GAME',
+                icon: Icons.play_arrow,
+                onTap: _startGame,
               ),
-            ),
-            if (isVsComputer) ...[
-              const SizedBox(height: 14),
-              const Text(
-                'Computer opponents use one fixed difficulty: they '
-                'capture when they can, prefer safe squares, and avoid '
-                'leaving tokens exposed.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.black54),
-              ),
+              if (isVsComputer) ...[
+                const SizedBox(height: 14),
+                const Text(
+                  'Computer opponents use one fixed difficulty: they '
+                  'capture when they can, prefer safe squares, and avoid '
+                  'leaving tokens exposed.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Colors.white70),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -137,21 +160,10 @@ class _SetupScreenState extends State<SetupScreen> {
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: ludoColors[color],
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 3,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
+          PlayerAvatar(
+            color: color,
+            name: _nameControllers[i].text,
+            size: 42,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -162,6 +174,8 @@ class _SetupScreenState extends State<SetupScreen> {
                     'Player ${i + 1} — ${color.label}${isComputer ? ' (Computer)' : ''}',
                 border: const OutlineInputBorder(),
                 isDense: true,
+                filled: true,
+                fillColor: TamLudoTheme.creamCard,
               ),
             ),
           ),

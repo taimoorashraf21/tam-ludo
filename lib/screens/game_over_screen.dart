@@ -2,12 +2,13 @@ import 'package:material_ui/material_ui.dart';
 
 import '../game/game_controller.dart';
 import '../game/ludo_engine.dart';
+import '../widgets/game_widgets.dart';
 import '../widgets/ludo_colors.dart';
 import 'board_screen.dart';
 import 'home_screen.dart';
 import 'setup_screen.dart';
 
-/// Winner announcement with Play Again / Home.
+/// Winner announcement with Rematch / Home.
 class GameOverScreen extends StatelessWidget {
   const GameOverScreen({
     super.key,
@@ -22,78 +23,128 @@ class GameOverScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = ludoColors[winner.color]!;
     final canReplay = setup != null && mode != GameMode.online;
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
+      backgroundColor: TamLudoTheme.feltBottom,
+      body: FeltBackground(
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Trophy in a gold ring.
+                  Container(
+                    width: 118,
+                    height: 118,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          TamLudoTheme.goldLight,
+                          TamLudoTheme.gold,
+                          TamLudoTheme.goldDark,
+                        ],
+                      ),
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: TamLudoTheme.gold.withValues(alpha: 0.6),
+                          blurRadius: 24,
+                          spreadRadius: 4,
+                        ),
+                        const BoxShadow(
+                          color: Colors.black45,
+                          blurRadius: 12,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.emoji_events,
+                      size: 62,
+                      color: Color(0xFF4E2F0E),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      PlayerAvatar(
+                        color: winner.color,
+                        name: winner.name,
+                        size: 44,
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          '${winner.name} wins!',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black54,
+                                offset: Offset(0, 2),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.emoji_events,
-                    size: 52,
-                    color: Colors.white,
+                  const SizedBox(height: 10),
+                  Text(
+                    '${winner.color.label} brought all 4 tokens home.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, color: Colors.white70),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  '${winner.name} wins!',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${winner.color.label} brought all 4 tokens home.',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16, color: Colors.black54),
-                ),
-                const SizedBox(height: 32),
-                if (canReplay)
+                  const SizedBox(height: 32),
+                  if (canReplay)
+                    SizedBox(
+                      width: double.infinity,
+                      child: GoldButton(
+                        label: 'REMATCH',
+                        icon: Icons.replay,
+                        onTap: () {
+                          final controller = setup!.buildController();
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute<void>(
+                              builder: (_) => BoardScreen(
+                                controller: controller,
+                                setup: setup,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final controller = setup!.buildController();
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BoardScreen(
-                              controller: controller,
-                              setup: setup,
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TamLudoTheme.primary,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const HomeScreen(),
+                        ),
+                        (route) => false,
+                      ),
+                      style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 1.5),
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: const Text(
-                        'Play Again',
+                        'Home',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -101,32 +152,8 @@ class GameOverScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const HomeScreen(),
-                      ),
-                      (route) => false,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: const Text(
-                      'Home',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
