@@ -25,9 +25,9 @@ class TamLudoApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(
           seedColor: TamLudoTheme.primary,
         ),
-        scaffoldBackgroundColor: TamLudoTheme.background,
+        scaffoldBackgroundColor: TamLudoTheme.feltBottom,
         appBarTheme: const AppBarTheme(
-          backgroundColor: TamLudoTheme.primary,
+          backgroundColor: TamLudoTheme.feltBottom,
           foregroundColor: Colors.white,
           centerTitle: true,
         ),
