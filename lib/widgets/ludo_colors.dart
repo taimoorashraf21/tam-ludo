@@ -18,13 +18,43 @@ const Map<LudoColor, Color> ludoDarkColors = {
   LudoColor.blue: Color(0xFF0D47A1),
 };
 
-/// App-wide theme colours.
+/// Lighter shade of each colour, for gradients and highlights.
+const Map<LudoColor, Color> ludoLightColors = {
+  LudoColor.red: Color(0xFFEF5350),
+  LudoColor.green: Color(0xFF66BB6A),
+  LudoColor.yellow: Color(0xFFFFD54F),
+  LudoColor.blue: Color(0xFF42A5F5),
+};
+
+/// App-wide theme colours: a rich green "felt table" look with gold accents.
+/// Everything is code-drawn; no images or copied artwork.
 class TamLudoTheme {
-  static const Color background = Color(0xFFFFF6E5);
+  // Felt table background.
+  static const Color feltTop = Color(0xFF10603F);
+  static const Color feltMid = Color(0xFF0B4A30);
+  static const Color feltBottom = Color(0xFF062E1D);
+  static const Color feltGlow = Color(0xFF1B7A4D);
+
+  // Gold accents (buttons, rims, highlights).
+  static const Color gold = Color(0xFFFFC93C);
+  static const Color goldDark = Color(0xFFD9930D);
+  static const Color goldLight = Color(0xFFFFE082);
+
+  // Cards and text.
+  static const Color creamCard = Color(0xFFFFF8E7);
+  static const Color cardShadow = Color(0x66000000);
+
+  // Board frame: a warm wood-brown rim around the white board.
+  static const Color boardFrame = Color(0xFF7A4E1D);
+  static const Color boardFrameLight = Color(0xFFB07A35);
+  static const Color boardFrameDark = Color(0xFF4E2F0E);
+
+  // Legacy fields (kept so older widgets keep compiling).
+  static const Color background = Color(0xFF062E1D);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color primary = Color(0xFF0F766E);
   static const Color primaryDark = Color(0xFF0B5953);
   static const Color ink = Color(0xFF263238);
   static const Color muted = Color(0xFF78909C);
-  static const Color boardLine = Color(0xFFB0BEC5);
+  static const Color boardLine = Color(0xFF94A3B8);
 }

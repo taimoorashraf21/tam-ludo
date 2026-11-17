@@ -8,9 +8,15 @@ import 'ludo_colors.dart';
 
 /// The 15x15 Ludo board: a static painted board plus tappable tokens.
 ///
-/// The board itself is drawn once by [_BoardPainter] (bases, track cells,
-/// start cells, star safe cells, home columns, centre triangles). Tokens
-/// are widgets layered on top so they stay big enough to tap on a phone.
+/// The board itself is drawn once by [_BoardPainter] (wood-gold rim,
+/// gradient bases, track cells, star safe cells, home columns, centre
+/// triangles). Tokens are widgets layered on top so they stay big enough
+/// to tap on a phone. All art is original and code-drawn.
+///
+/// The rim width must match [_BoardPainter]'s inset so tokens sit exactly
+/// on their cells.
+const double _boardRim = 7.0;
+
 class LudoBoard extends StatelessWidget {
   const LudoBoard({super.key, required this.controller});
 
@@ -23,15 +29,29 @@ class LudoBoard extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final size = constraints.maxWidth;
-          final cell = size / 15;
-          return Stack(
-            children: [
-              CustomPaint(
-                size: Size.square(size),
-                painter: _BoardPainter(),
-              ),
-              ..._tokenWidgets(cell),
-            ],
+          // Tokens must use the same cell grid as the painter: the board
+          // face is inset by [_boardRim] on every side.
+          final cell = (size - 2 * _boardRim) / 15;
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size.square(size),
+                  painter: _BoardPainter(),
+                ),
+                ..._tokenWidgets(cell),
+              ],
+            ),
           );
         },
       ),
@@ -49,8 +69,8 @@ class LudoBoard extends StatelessWidget {
             controller.tokensOnCell(cellPos.$1, cellPos.$2);
         final slot = coLocated.indexWhere((e) => e.$1 == pi && e.$2 == ti);
         final offset = _stackOffset(coLocated.length, slot, cell);
-        final cx = (cellPos.$2 + 0.5) * cell + offset.$1;
-        final cy = (cellPos.$1 + 0.5) * cell + offset.$2;
+        final cx = _boardRim + (cellPos.$2 + 0.5) * cell + offset.$1;
+        final cy = _boardRim + (cellPos.$1 + 0.5) * cell + offset.$2;
         final movable = controller.movableTokens.contains(ti) &&
             engine.currentPlayer == pi;
         // A generous invisible hit area around the visible token.
@@ -63,8 +83,9 @@ class LudoBoard extends StatelessWidget {
             height: hit,
             child: _TokenWidget(
               color: ludoColors[player.color]!,
+              lightColor: ludoLightColors[player.color]!,
               darkColor: ludoDarkColors[player.color]!,
-              diameter: cell * 0.82,
+              diameter: cell * 0.86,
               movable: movable,
               finished: player.tokens[ti] == LudoEngine.finishSteps,
               onTap: movable ? () => controller.tapToken(ti) : null,
@@ -93,10 +114,12 @@ class LudoBoard extends StatelessWidget {
   }
 }
 
-/// One token: a coloured disc with a white ring. Movable tokens pulse.
+/// One token: a 3D-looking disc with a radial highlight and white ring.
+/// Movable tokens pulse with a glowing ring.
 class _TokenWidget extends StatefulWidget {
   const _TokenWidget({
     required this.color,
+    required this.lightColor,
     required this.darkColor,
     required this.diameter,
     required this.movable,
@@ -105,6 +128,7 @@ class _TokenWidget extends StatefulWidget {
   });
 
   final Color color;
+  final Color lightColor;
   final Color darkColor;
   final double diameter;
   final bool movable;
@@ -154,11 +178,16 @@ class _TokenWidgetState extends State<_TokenWidget>
         height: widget.diameter,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: widget.color,
+          gradient: RadialGradient(
+            center: const Alignment(-0.35, -0.4),
+            radius: 0.95,
+            colors: [widget.lightColor, widget.color, widget.darkColor],
+            stops: const [0.0, 0.55, 1.0],
+          ),
           border: Border.all(color: Colors.white, width: 2.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
+              color: Colors.black.withValues(alpha: 0.4),
               blurRadius: 3,
               offset: const Offset(0, 2),
             ),
@@ -166,11 +195,15 @@ class _TokenWidgetState extends State<_TokenWidget>
         ),
         child: Center(
           child: Container(
-            width: widget.diameter * 0.34,
-            height: widget.diameter * 0.34,
+            width: widget.diameter * 0.3,
+            height: widget.diameter * 0.3,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: widget.darkColor.withValues(alpha: 0.55),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.65),
+                width: 1,
+              ),
             ),
           ),
         ),
@@ -194,9 +227,15 @@ class _TokenWidgetState extends State<_TokenWidget>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.darkColor.withValues(alpha: 0.35 + 0.6 * t),
+                color: TamLudoTheme.gold.withValues(alpha: 0.5 + 0.5 * t),
                 width: 2.5 + 2.5 * t,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: TamLudoTheme.gold.withValues(alpha: 0.35 + 0.4 * t),
+                  blurRadius: 8 + 6 * t,
+                ),
+              ],
             ),
             child: child,
           );
@@ -207,61 +246,123 @@ class _TokenWidgetState extends State<_TokenWidget>
   }
 }
 
-/// Paints the static board: bases, track, safe stars, home columns, centre.
+/// Paints the static board: wood-gold rim, gradient bases, track, safe
+/// stars, home columns, centre triangles.
 class _BoardPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final cell = size.width / 15;
     final line = Paint()
       ..color = TamLudoTheme.boardLine
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     final white = Paint()..color = Colors.white;
 
-    // Board background.
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Offset.zero & size,
-        const Radius.circular(10),
-      ),
-      white,
+    // --- Outer wood-gold rim ---
+    final rimRect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(16),
     );
+    canvas.drawRRect(
+      rimRect,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamLudoTheme.boardFrameLight,
+            TamLudoTheme.boardFrame,
+            TamLudoTheme.boardFrameDark,
+          ],
+        ).createShader(Offset.zero & size),
+    );
+
+    // --- Board face (inset inside the rim) ---
+    const rim = _boardRim;
+    final face = RRect.fromRectAndRadius(
+      Rect.fromLTWH(rim, rim, size.width - 2 * rim, size.height - 2 * rim),
+      const Radius.circular(10),
+    );
+    canvas.drawRRect(face, white);
+    canvas.save();
+    canvas.clipRRect(face);
+
+    // Work in face coordinates: recompute the cell from the face size.
+    final faceSize = size.width - 2 * rim;
+    final f = faceSize / 15;
+    final ox = rim;
+    final oy = rim;
+    Rect cellRect(double r, double c) =>
+        Rect.fromLTWH(ox + c * f, oy + r * f, f, f);
+    Offset cellCenter(double r, double c) =>
+        Offset(ox + (c + 0.5) * f, oy + (r + 0.5) * f);
+
+    Paint vGrad(Rect rect, Color top, Color bottom) => Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [top, bottom],
+      ).createShader(rect);
 
     // --- Bases (6x6 corners) ---
     for (final color in LudoColor.values) {
       final (top, left) = LudoEngine.baseOrigins[color]!;
       final baseRect = Rect.fromLTWH(
-        left * cell,
-        top * cell,
-        6 * cell,
-        6 * cell,
+        ox + left * f,
+        oy + top * f,
+        6 * f,
+        6 * f,
       );
-      canvas.drawRect(baseRect, Paint()..color = ludoColors[color]!);
-      // Inner white area.
+      canvas.drawRect(
+        baseRect,
+        vGrad(baseRect, ludoLightColors[color]!, ludoColors[color]!),
+      );
+      // Inner white panel.
       final inner = Rect.fromLTWH(
-        (left + 0.9) * cell,
-        (top + 0.9) * cell,
-        4.2 * cell,
-        4.2 * cell,
+        ox + (left + 0.9) * f,
+        oy + (top + 0.9) * f,
+        4.2 * f,
+        4.2 * f,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(inner, Radius.circular(cell * 0.35)),
-        white,
+        RRect.fromRectAndRadius(inner, Radius.circular(f * 0.35)),
+        Paint()..color = const Color(0xFFFFFBF2),
       );
-      // Token parking spots.
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(inner, Radius.circular(f * 0.35)),
+        Paint()
+          ..color = Colors.black.withValues(alpha: 0.12)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+      // 3D parking spots.
       for (final (r, c) in LudoEngine.baseSpots[color]!) {
+        final center = cellCenter(r, c);
         canvas.drawCircle(
-          Offset((c + 0.5) * cell, (r + 0.5) * cell),
-          cell * 0.42,
-          Paint()..color = ludoColors[color]!,
-        );
-        canvas.drawCircle(
-          Offset((c + 0.5) * cell, (r + 0.5) * cell),
-          cell * 0.42,
+          center,
+          f * 0.44,
           Paint()
             ..color = Colors.white
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5,
+        );
+        canvas.drawCircle(
+          center,
+          f * 0.42,
+          Paint()
+            ..shader = RadialGradient(
+              center: const Alignment(-0.35, -0.4),
+              radius: 0.9,
+              colors: [
+                ludoLightColors[color]!,
+                ludoColors[color]!,
+                ludoDarkColors[color]!,
+              ],
+            ).createShader(Rect.fromCircle(center: center, radius: f * 0.42)),
+        );
+        canvas.drawCircle(
+          Offset(center.dx - f * 0.12, center.dy - f * 0.12),
+          f * 0.09,
+          Paint()..color = Colors.white.withValues(alpha: 0.75),
         );
       }
     }
@@ -272,15 +373,27 @@ class _BoardPainter extends CustomPainter {
     };
     for (var i = 0; i < LudoEngine.trackLength; i++) {
       final (r, c) = LudoEngine.track[i];
-      final rect = Rect.fromLTWH(c * cell, r * cell, cell, cell);
+      final rect = cellRect(r.toDouble(), c.toDouble());
       final startColor = startCells[i];
       if (startColor != null) {
-        canvas.drawRect(rect, Paint()..color = ludoColors[startColor]!);
+        canvas.drawRect(
+          rect,
+          vGrad(rect, ludoLightColors[startColor]!, ludoColors[startColor]!),
+        );
+        // Small white ring marks the start square.
+        canvas.drawCircle(
+          rect.center,
+          f * 0.2,
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.85)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5,
+        );
       } else if (LudoEngine.safeIndices.contains(i)) {
         canvas.drawRect(rect, Paint()..color = const Color(0xFFFFF3C4));
-        _drawStar(canvas, rect.center, cell * 0.32);
+        _drawStar(canvas, rect.center, f * 0.32);
       } else {
-        canvas.drawRect(rect, white);
+        canvas.drawRect(rect, vGrad(rect, Colors.white, const Color(0xFFF1F5F9)));
       }
       canvas.drawRect(rect, line);
     }
@@ -288,22 +401,34 @@ class _BoardPainter extends CustomPainter {
     // --- Home columns ---
     for (final color in LudoColor.values) {
       for (final (r, c) in LudoEngine.homeColumns[color]!) {
-        final rect = Rect.fromLTWH(c * cell, r * cell, cell, cell);
-        canvas.drawRect(rect, Paint()..color = ludoColors[color]!);
+        final rect = cellRect(r.toDouble(), c.toDouble());
+        canvas.drawRect(
+          rect,
+          vGrad(rect, ludoLightColors[color]!, ludoColors[color]!),
+        );
         canvas.drawRect(rect, line);
       }
     }
 
-    // --- Centre home triangle (3x3, rows/cols 6-8) ---
-    final centre = Offset(7.5 * cell, 7.5 * cell);
+    // --- Centre home triangles (3x3, rows/cols 6-8) ---
+    final centre = Offset(ox + 7.5 * f, oy + 7.5 * f);
     final corners = {
-      LudoColor.green: [Offset(6 * cell, 6 * cell), Offset(9 * cell, 6 * cell)],
-      LudoColor.yellow: [
-        Offset(9 * cell, 6 * cell),
-        Offset(9 * cell, 9 * cell),
+      LudoColor.green: [
+        Offset(ox + 6 * f, oy + 6 * f),
+        Offset(ox + 9 * f, oy + 6 * f),
       ],
-      LudoColor.blue: [Offset(9 * cell, 9 * cell), Offset(6 * cell, 9 * cell)],
-      LudoColor.red: [Offset(6 * cell, 9 * cell), Offset(6 * cell, 6 * cell)],
+      LudoColor.yellow: [
+        Offset(ox + 9 * f, oy + 6 * f),
+        Offset(ox + 9 * f, oy + 9 * f),
+      ],
+      LudoColor.blue: [
+        Offset(ox + 9 * f, oy + 9 * f),
+        Offset(ox + 6 * f, oy + 9 * f),
+      ],
+      LudoColor.red: [
+        Offset(ox + 6 * f, oy + 9 * f),
+        Offset(ox + 6 * f, oy + 6 * f),
+      ],
     };
     for (final entry in corners.entries) {
       final path = Path()
@@ -311,16 +436,32 @@ class _BoardPainter extends CustomPainter {
         ..lineTo(entry.value[1].dx, entry.value[1].dy)
         ..lineTo(centre.dx, centre.dy)
         ..close();
-      canvas.drawPath(path, Paint()..color = ludoColors[entry.key]!);
+      canvas.drawPath(
+        path,
+        vGrad(
+          Rect.fromPoints(entry.value[0], entry.value[1]),
+          ludoLightColors[entry.key]!,
+          ludoColors[entry.key]!,
+        ),
+      );
       canvas.drawPath(path, line);
     }
+    // Tiny gold star at the very centre.
+    _drawStar(canvas, centre, f * 0.34, color: TamLudoTheme.gold);
+    canvas.drawCircle(
+      centre,
+      f * 0.34,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    canvas.restore();
 
     // Board outline.
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Offset.zero & size,
-        const Radius.circular(10),
-      ),
+      face,
       Paint()
         ..color = TamLudoTheme.boardLine
         ..style = PaintingStyle.stroke
@@ -328,7 +469,8 @@ class _BoardPainter extends CustomPainter {
     );
   }
 
-  void _drawStar(Canvas canvas, Offset center, double radius) {
+  void _drawStar(Canvas canvas, Offset center, double radius,
+      {Color color = const Color(0xFFF59E0B)}) {
     final path = Path();
     for (var i = 0; i < 10; i++) {
       final angle = -pi / 2 + i * pi / 5;
@@ -344,7 +486,14 @@ class _BoardPainter extends CustomPainter {
       }
     }
     path.close();
-    canvas.drawPath(path, Paint()..color = const Color(0xFFE65100));
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = const Color(0xFFB45309)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
   }
 
   @override
